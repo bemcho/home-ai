@@ -63,7 +63,8 @@ Do the same thing with the native lib previously wrapped in a new jar file.
 lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
 
    
-   Change line 17 :jvm-opts ["-Xmx8g" "-Djava.library.path=E:\\ClojureProjects\\home-ai\\native\\windows\\x86_64"] as            apropriate   
+   Change line 17 :jvm-opts ["-Xmx8g" "-Djava.library.path=E:\\ClojureProjects\\home-ai\\native\\windows\\x86_64"] in            project.clj
+   as apropriate.
 
    This quite did not work :
    $ java -jar ai-home-0.1.0-standalone.jar [args]

@@ -1,6 +1,6 @@
 # home-ai
 
-FIXME: description
+Inspired by https://github.com/gigasquid/clj-drone (opencv and video)
 
 ## Installation
 

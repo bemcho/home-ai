@@ -11,9 +11,7 @@
   [& args]
   (do
     ;(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)
-    (init-opencv)
-    (init-video )
-    (start-video 0)))
+    (start-visual-repl)))
 
 
 

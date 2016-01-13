@@ -35,10 +35,11 @@
 (def training (atom false))
 (def collect-samples (atom false))
 (def empirical-sample-count 100)
-(def traning-rectangle (atom (Rect. 300 100 92  112)) )
+(def confidence 123.0)
+(def traning-rectangle (atom (Rect. 300 100 250  250)) )
 (def classifiers-path "resources/data/classifiers/")
 (def recognizers-path "resources/data/facerecognizers/lbphFaceRecognizer.xml")
-(def label (atom 0))
+(def label (atom 3))
 (def train-agent (agent {}))
 (def recognize-agent (agent {:label -1}))
 (declare lbph-face-recognizer)
@@ -80,7 +81,7 @@
   [image]
   (let [imageMatGray (Mat.)]
     (Imgproc/cvtColor image imageMatGray Imgproc/COLOR_BGR2GRAY)
-    (Imgproc/equalizeHist imageMatGray imageMatGray)
+    ;(Imgproc/equalizeHist imageMatGray imageMatGray)
     (doall
       (map (fn [rect]
              (Imgproc/rectangle image
@@ -92,16 +93,19 @@
 
     (doall
       (map (fn [rect]
-             (Imgproc/putText image (str "Label=" (.predict @lbph-face-recognizer (Mat. (.clone imageMatGray)  rect )))
-                              (Point. (.x rect) (- (.y rect) 10))
-                              Highgui/CV_FONT_NORMAL  1 (Scalar. 255 255 51) 2))
-           @all-detections-for-image))
+             (let [predictedLabel (.predict @lbph-face-recognizer (Mat. (.clone imageMatGray)  rect  ) )]
+               (Imgproc/putText image (str "Label=" (if (and (>= predictedLabel 0) (<= predictedLabel @label))  predictedLabel predictedLabel) )
+               (Point. (.x rect) (- (.y rect) 10))
+               Highgui/CV_FONT_NORMAL  1 (Scalar. 255 255 51) 2)))
+           @all-detections-for-image)
+               )
+             )
 
       (when @training
-        (Imgproc/putText image "Training . . ." (Point. (.x @traning-rectangle) (.y @traning-rectangle))  Highgui/CV_FONT_NORMAL  1 (Scalar. 0 255 0) 2))
+        (Imgproc/putText image (str "Train for Label=" @label)  (Point. (.x @traning-rectangle) (- (.y @traning-rectangle) 10) )  Highgui/CV_FONT_NORMAL  1 (Scalar. 0 0 204) 2))
       ;(Imgcodecs/imwrite "faceDetections.png" image)
       (convert-mat-to-buffer-image image))
-    )
+
 
 
 (defn load-classifiers
@@ -123,13 +127,13 @@
     (Imgproc/cvtColor imageMat imageMatGray Imgproc/COLOR_BGR2GRAY)
     (Imgproc/equalizeHist imageMatGray imageMatGray)
     (dorun
-      (when @collect-samples
+      (if @training
         (reset! trainning-samples (concat @trainning-samples (vector (.clone (Mat. imageMatGray @traning-rectangle)))))
-        )
-     (doseq [agent agents]
-       (send agent detect-faces-agent! imageMatGray )
-       (doall (map #(reset! all-detections-for-image (concat @all-detections-for-image (.toArray (:detections (deref %)))  ))   agents))))
+        (doseq [agent agents]
+          (send agent detect-faces-agent! imageMatGray )
+          (doall (map #(reset! all-detections-for-image (concat @all-detections-for-image (.toArray (:detections (deref %)))  ))   agents))))
       )
+        )
     (draw-bounding-boxes! imageMat))
 
   (defn capture-from-cam
@@ -154,12 +158,11 @@
 
 (defn init-opencv []
   (def classifiers (atom (load-classifiers classifiers-path)))
-  (def lbph-face-recognizer (atom (Face/createLBPHFaceRecognizer 1 8 8 8 123.0)))
+  (def lbph-face-recognizer (atom (Face/createLBPHFaceRecognizer 1 8 8 8 confidence)))
   (if (.exists (File. recognizers-path))
     (dosync
       (.load @lbph-face-recognizer recognizers-path))
     )
-  ;(reset! lbph-face-recognizer (.load @lbph-face-recognizer "resources/data/facerecognizers/lbphFaceRecognizer.xml"))
   )
 
 (defn update-lbph-recognizer
@@ -167,15 +170,19 @@
   [samples]
   (do
     (let [samples-count (.size @trainning-samples)
-          mat (Mat. 1 samples-count CvType/CV_32SC1)
-          count (ref 0) ]
+          mat (atom (Mat/zeros  1 samples-count CvType/CV_32SC1)) ]
       (dosync
-        (map #(fn [_] (do  (.put mat @count 0 %)) (reset! count (+ @count 1))) (repeat samples-count @label ))
+        (doall
+        ;(map #(fn [%1 %2] (do (.put @mat 0 %1  %2))) (range samples-count ) (repeat samples-count @label))
+
+        (.put 0 0 (repeat samples-count @label)))
         )
-      (.update @lbph-face-recognizer samples mat)
+      (.train @lbph-face-recognizer samples @mat)
+      (.update @lbph-face-recognizer samples @mat)
       (.save @lbph-face-recognizer recognizers-path)
       (reset! trainning-samples [])
-      (reset! label (+ @label 1)))
+      ; (reset! label (+ @label 1))
+      )
     ))
 
 (defn update-recognizer

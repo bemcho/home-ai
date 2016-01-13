@@ -40,6 +40,7 @@
 (def recognizers-path "resources/data/facerecognizers/lbphFaceRecognizer.xml")
 (def label (atom 0))
 (def train-agent (agent {}))
+(def recognize-agent (agent {:label -1}))
 (declare lbph-face-recognizer)
 (declare classifiers)
 
@@ -68,22 +69,40 @@
   ;(reset! all-detections-for-image (concat @all-detections-for-image (.toArray @detections)))
   a
     )
-
+(defn recognize
+  "docstring"
+  [a mat]
+  (:label (.predict @lbph-face-recognizer mat))
+  (:mat mat)
+  a
+  )
 (defn draw-bounding-boxes!
   [image]
-  (doall
-    (map (fn [rect]
-                (Imgproc/rectangle image
-                                   (Point. (.x rect) (.y rect))
-                                   (Point. (+ (.x rect) (.width rect))
-                                           (+ (.y rect) (.height rect)))
-                                   (Scalar. 0 255 0) 2))
-             (concat @all-detections-for-image (when @training (vector  @traning-rectangle))))
-         )
-  (when @training
-    (Imgproc/putText image "Training . . ." (Point. (.x @traning-rectangle) (.y @traning-rectangle))  Highgui/CV_FONT_NORMAL  1 (Scalar. 0 255 0) 2))
-  ;(Imgcodecs/imwrite "faceDetections.png" image)
-  (convert-mat-to-buffer-image image))
+  (let [imageMatGray (Mat.)]
+    (Imgproc/cvtColor image imageMatGray Imgproc/COLOR_BGR2GRAY)
+    (Imgproc/equalizeHist imageMatGray imageMatGray)
+    (doall
+      (map (fn [rect]
+             (Imgproc/rectangle image
+                                (Point. (.x rect) (.y rect))
+                                (Point. (+ (.x rect) (.width rect))
+                                        (+ (.y rect) (.height rect)))
+                                (Scalar. 0 255 0) 2))
+           (concat @all-detections-for-image (when @training (vector  @traning-rectangle)))))
+
+    (doall
+      (map (fn [rect]
+             (Imgproc/putText image (str "Label=" (.predict @lbph-face-recognizer (Mat. (.clone imageMatGray)  rect )))
+                              (Point. (.x rect) (- (.y rect) 10))
+                              Highgui/CV_FONT_NORMAL  1 (Scalar. 255 255 51) 2))
+           @all-detections-for-image))
+
+      (when @training
+        (Imgproc/putText image "Training . . ." (Point. (.x @traning-rectangle) (.y @traning-rectangle))  Highgui/CV_FONT_NORMAL  1 (Scalar. 0 255 0) 2))
+      ;(Imgcodecs/imwrite "faceDetections.png" image)
+      (convert-mat-to-buffer-image image))
+    )
+
 
 (defn load-classifiers
   [dir-name]
@@ -94,6 +113,8 @@
       (recur
         (rest file-paths)
         (merge result (load-classifier (str dir-name (.getName (first file-paths)))))))))
+
+
 
 (defn process-mat-and-return-image [imageMat]
   (reset! all-detections-for-image [])
@@ -108,7 +129,8 @@
      (doseq [agent agents]
        (send agent detect-faces-agent! imageMatGray )
        (doall (map #(reset! all-detections-for-image (concat @all-detections-for-image (.toArray (:detections (deref %)))  ))   agents))))
-    (draw-bounding-boxes! imageMat)))
+      )
+    (draw-bounding-boxes! imageMat))
 
   (defn capture-from-cam
     "Gets frame from cam and returns it as Mat."
@@ -132,7 +154,7 @@
 
 (defn init-opencv []
   (def classifiers (atom (load-classifiers classifiers-path)))
-  (def lbph-face-recognizer (atom (Face/createLBPHFaceRecognizer)))
+  (def lbph-face-recognizer (atom (Face/createLBPHFaceRecognizer 1 8 8 8 123.0)))
   (if (.exists (File. recognizers-path))
     (dosync
       (.load @lbph-face-recognizer recognizers-path))

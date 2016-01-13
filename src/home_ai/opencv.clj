@@ -1,22 +1,26 @@
 (ns home-ai.opencv
-    (:import
-      org.opencv.core.Core
-      org.opencv.core.MatOfRect
-      org.opencv.core.MatOfByte
-      org.opencv.core.Point
-      org.opencv.core.Rect
-      org.opencv.core.Mat
-      org.opencv.core.Scalar
-      org.opencv.imgcodecs.Imgcodecs
-      org.opencv.objdetect.CascadeClassifier
-      org.opencv.objdetect.Objdetect
-      org.opencv.videoio.VideoCapture
-      java.awt.image.BufferedImage
-      java.awt.RenderingHints
-      javax.imageio.ImageIO
-      java.io.File
-      java.io.ByteArrayInputStream
-      org.opencv.core.Size (org.opencv.imgproc Imgproc)) 
+  (:import
+    org.opencv.core.Core
+    org.opencv.core.MatOfRect
+    org.opencv.core.MatOfByte
+    org.opencv.core.Point
+    org.opencv.core.Rect
+    org.opencv.core.Mat
+    org.opencv.core.Scalar
+    org.opencv.imgcodecs.Imgcodecs
+    org.opencv.objdetect.CascadeClassifier
+    org.opencv.objdetect.Objdetect
+    org.opencv.videoio.VideoCapture
+    java.awt.image.BufferedImage
+    java.awt.RenderingHints
+    javax.imageio.ImageIO
+    java.io.File
+    java.io.ByteArrayInputStream
+    org.opencv.core.Size
+    (org.opencv.imgproc Imgproc)
+    (org.opencv.face Face)
+    (org.opencv.core CvType)
+    (org.opencv.highgui Highgui))
     (:require [clojure.walk :as walk]))
 
 
@@ -27,7 +31,16 @@
 
 (def all-detections-for-image (atom []))
 (def face-detections (atom []))
-
+(def trainning-samples (atom (vector)))
+(def training (atom false))
+(def collect-samples (atom false))
+(def empirical-sample-count 100)
+(def traning-rectangle (atom (Rect. 300 100 92  112)) )
+(def classifiers-path "resources/data/classifiers/")
+(def recognizers-path "resources/data/facerecognizers/lbphFaceRecognizer.xml")
+(def label (atom 0))
+(def train-agent (agent {}))
+(declare lbph-face-recognizer)
 (declare classifiers)
 
 
@@ -58,14 +71,17 @@
 
 (defn draw-bounding-boxes!
   [image]
-  (doall (map (fn [rect]
+  (doall
+    (map (fn [rect]
                 (Imgproc/rectangle image
                                    (Point. (.x rect) (.y rect))
                                    (Point. (+ (.x rect) (.width rect))
                                            (+ (.y rect) (.height rect)))
-                                   (Scalar. 0 255 0)))
-              @all-detections-for-image)
+                                   (Scalar. 0 255 0) 2))
+             (concat @all-detections-for-image (when @training (vector  @traning-rectangle))))
          )
+  (when @training
+    (Imgproc/putText image "Training . . ." (Point. (.x @traning-rectangle) (.y @traning-rectangle))  Highgui/CV_FONT_NORMAL  1 (Scalar. 0 255 0) 2))
   ;(Imgcodecs/imwrite "faceDetections.png" image)
   (convert-mat-to-buffer-image image))
 
@@ -86,9 +102,12 @@
     (Imgproc/cvtColor imageMat imageMatGray Imgproc/COLOR_BGR2GRAY)
     (Imgproc/equalizeHist imageMatGray imageMatGray)
     (dorun
+      (when @collect-samples
+        (reset! trainning-samples (concat @trainning-samples (vector (.clone (Mat. imageMatGray @traning-rectangle)))))
+        )
      (doseq [agent agents]
        (send agent detect-faces-agent! imageMatGray )
-       (doall (map #(reset! all-detections-for-image (concat @all-detections-for-image (.toArray (:detections (deref %)))))   agents))))
+       (doall (map #(reset! all-detections-for-image (concat @all-detections-for-image (.toArray (:detections (deref %)))  ))   agents))))
     (draw-bounding-boxes! imageMat)))
 
   (defn capture-from-cam
@@ -103,7 +122,51 @@
   (capture-from-cam (VideoCapture. n)))
 ;(process-and-return-image "opencvin.png")
 
+(defn toggle-collect-samples []
+  (reset! collect-samples (not @collect-samples)))
+
+(defn toggle-training
+  "docstring"
+  []
+  (reset! training (not @training)))
+
 (defn init-opencv []
-  (def classifiers (atom (load-classifiers "resources/data/classifiers/"))))
+  (def classifiers (atom (load-classifiers classifiers-path)))
+  (def lbph-face-recognizer (atom (Face/createLBPHFaceRecognizer)))
+  (if (.exists (File. recognizers-path))
+    (dosync
+      (.load @lbph-face-recognizer recognizers-path))
+    )
+  ;(reset! lbph-face-recognizer (.load @lbph-face-recognizer "resources/data/facerecognizers/lbphFaceRecognizer.xml"))
+  )
 
+(defn update-lbph-recognizer
+  ""
+  [samples]
+  (do
+    (let [samples-count (.size @trainning-samples)
+          mat (Mat. 1 samples-count CvType/CV_32SC1)
+          count (ref 0) ]
+      (dosync
+        (map #(fn [_] (do  (.put mat @count 0 %)) (reset! count (+ @count 1))) (repeat samples-count @label ))
+        )
+      (.update @lbph-face-recognizer samples mat)
+      (.save @lbph-face-recognizer recognizers-path)
+      (reset! trainning-samples [])
+      (reset! label (+ @label 1)))
+    ))
 
+(defn update-recognizer
+  "docstring"
+  [a matSamples]
+  (do
+    (toggle-collect-samples)
+    (toggle-training)
+    (update-lbph-recognizer matSamples))
+a
+  )
+
+(defn start-training []
+  (toggle-training)
+  (toggle-collect-samples)
+  )

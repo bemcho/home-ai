@@ -75,14 +75,18 @@
         (display-frame frame)))
     (catch Exception e (println (str "Problem reading frame - skipping " e)))))
 
+
 (defn stream-video [_ cam out]
   (if @stream (do
                   (read-frame cam out)
+                  (when (and @collect-samples (>= (.size @trainning-samples ) empirical-sample-count))
+                    (send-off train-agent update-recognizer @trainning-samples))
                   (send video-agent stream-video cam  (when @save-video
-                                                                         out)))
+                                                        out))
+                  )
+
               (.release cam))
   )
-
 
 (defn end-video []
   (reset! stream false))
@@ -100,10 +104,11 @@
     (send video-agent stream-video (VideoCapture. device) (when @save-video
                                             (FileOutputStream. "vid.h264")))))
 
-     (comment
+     (defn start-visual-repl
+       []
        (do
          (init-opencv)
          (init-video )
          (start-video 0))
-       (end-video))
+       )
 

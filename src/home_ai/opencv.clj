@@ -173,15 +173,12 @@
           mat (atom (Mat/zeros  1 samples-count CvType/CV_32SC1)) ]
       (dosync
         (doall
-        (map #(fn [%1 %2] (do (.put @mat 0 %1  %2))) (range samples-count ) (repeat samples-count @label))
-
+          (map #(fn [%1 %2] (do (.put @mat 0 %1  %2))) (range samples-count ) (repeat samples-count @label))
         )
-        )
-      (.train @lbph-face-recognizer samples @mat)
-      (.update @lbph-face-recognizer samples @mat)
-      (.save @lbph-face-recognizer recognizers-path)
-      (reset! trainning-samples [])
-      ; (reset! label (+ @label 1))
+        (.update @lbph-face-recognizer samples @mat)
+        (.save @lbph-face-recognizer recognizers-path)
+        (reset! trainning-samples [])
+        (reset! label (+ @label 1)))
       )
     ))
 

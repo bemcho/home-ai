@@ -34,12 +34,12 @@
 (def trainning-samples (atom (vector)))
 (def training (atom false))
 (def collect-samples (atom false))
-(def empirical-sample-count 100)
+(def empirical-sample-count 77)
 (def confidence 123.0)
 (def traning-rectangle (atom (Rect. 300 100 250  250)) )
 (def classifiers-path "resources/data/classifiers/")
 (def recognizers-path "resources/data/facerecognizers/lbphFaceRecognizer.xml")
-(def label (atom 3))
+(def label (atom 4))
 (def train-agent (agent {}))
 (def recognize-agent (agent {:label -1}))
 (declare lbph-face-recognizer)
@@ -170,17 +170,18 @@
   [samples]
   (do
     (let [samples-count (.size @trainning-samples)
-          mat (atom (Mat/zeros  1 samples-count CvType/CV_32SC1)) ]
-      (dosync
-        (doall
-          (map #(fn [%1 %2] (do (.put @mat 0 %1  %2))) (range samples-count ) (repeat samples-count @label))
+          mat (ref (Mat.   1 samples-count CvType/CV_32SC1 )) ]
+
+        (dorun
+          (map #(fn [_ _] (do (.put @mat 0 %1  %2))) (range samples-count ) (repeat samples-count @label))
         )
+        (.setTo @mat (Scalar. @label @label @label))
         (.update @lbph-face-recognizer samples @mat)
         (.save @lbph-face-recognizer recognizers-path)
         (reset! trainning-samples [])
         (reset! label (+ @label 1)))
       )
-    ))
+    )
 
 (defn update-recognizer
   "docstring"

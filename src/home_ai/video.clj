@@ -6,7 +6,9 @@
            javax.swing.JPanel
            java.awt.FlowLayout
            org.opencv.videoio.VideoCapture
-           )
+           (javax.swing JButton JTextField JLabel)
+           (java.awt GridLayout)
+           (java.awt.event ActionListener))
 
   (:require  [home-ai.opencv :refer :all]
             ))
@@ -37,10 +39,49 @@
   (def view (JPanel.))
   (doto window
     (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
-    (.setBounds 30 30 900 950)
+    (.setBounds 0 0 1300 950)
     )
+
+
+  (import 'java.awt.event.ActionListener)
+
+  (def layout (GridLayout. 2 0))
+  (def train-panel-layout (GridLayout. 0 1))
+
+  (def view-panel-layout (GridLayout. 0 1))
+  (.setLayout view view-panel-layout)
+
+  (def label-label (JLabel. "Enter label number you want to associate with label info.You can add different labels with same label info."))
+  (def input-label (JTextField.))
+
+  (def label-label-info (JLabel. "Enter String representing your label {first last name etc.}"))
+  (def input-label-info (JTextField.))
+
+  (def training-panel (JPanel.))
+  (doto training-panel
+    (.setLayout train-panel-layout))
+
+  (.setLayout (.getContentPane window) layout)
   (.add (.getContentPane window) view)
+
+  (.add training-panel label-label-info)
+  (.add training-panel input-label-info)
+
+  (.add training-panel label-label)
+  (.add training-panel input-label)
+
+
+
+  (def training-button (JButton. "Start Training"))
+  (def act (proxy [ActionListener] []
+             (actionPerformed [event] (start-training (.getText input-label-info) (parse-int (.getText input-label)) ))))
+
+  (.addActionListener training-button act)
+  (.add training-panel training-button)
+
+  (.add (.getContentPane window) training-panel)
   (.setVisible window true)
+
   (def g (.getGraphics view)))
 
 (defn update-image [bi]

@@ -6,7 +6,7 @@
            javax.swing.JPanel
            java.awt.FlowLayout
            org.opencv.videoio.VideoCapture
-           (javax.swing JButton JTextField JLabel JList JScrollPane)
+           (javax.swing JButton JTextField JLabel JList JScrollPane BoxLayout DefaultListSelectionModel)
            (java.awt GridLayout Dimension)
            (java.awt.event ActionListener)
            (javax.swing.event ListSelectionListener))
@@ -36,11 +36,13 @@
   (reset! opencv b))
 
 (defn read-labels-from-mat  [mat]
-  (into-array String (map #(str %1) [1 2 3 4 5 6 7 8 9 10 11]))
+  (into-array String (map #(str %1) [1 2 3 4 5 6 7 8 9 10 11 12 13 14]))
   )
 (defn setup-viewer []
   (def window (JFrame. "test"))
   (def view (JPanel.))
+  (def view-panel-layout (BoxLayout. view  BoxLayout/Y_AXIS))
+    (.setLayout view view-panel-layout)
   (doto window
     (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
     (.setBounds 0 0 1300 950)
@@ -50,25 +52,26 @@
   (import 'java.awt.event.ActionListener)
 
   (def layout (GridLayout. 2 0))
-  (def train-panel-layout (GridLayout. 0 1))
 
-  (def view-panel-layout (GridLayout. 0 1))
-  (.setLayout view view-panel-layout)
+
+
 
 
 
   (def label-label (JLabel. "Enter label number you want to associate with label info.You can add different labels with same label info."))
   (def input-label (JList. (read-labels-from-mat (.getLabels @lbph-face-recognizer))))
-  (.setVisibleRowCount input-label 4)
+  (.setPreferredSize input-label (Dimension. 10 200))
+  (.setVisibleRowCount input-label 20)
+  (.setSelectionMode input-label DefaultListSelectionModel/SINGLE_SELECTION)
   (def scroll  (JScrollPane.))
   (doto scroll
     (.setViewportView  input-label)
-    (.setVisible  true)
-    (.setMinimumSize(Dimension. 50 50)))
+    )
 
 
   (def label-label-info (JLabel. "Enter String representing your label {first last name etc.}"))
   (def input-label-info (JTextField. (.getLabelInfo @lbph-face-recognizer (parse-int (if (.getSelectedValue input-label) (.getSelectedValue input-label) "1")) )))
+  (.setPreferredSize input-label-info (Dimension. 70 40))
 
   (def on-change-label (proxy [ListSelectionListener] []
                          (valueChanged [event]
@@ -77,6 +80,7 @@
   (.addListSelectionListener input-label on-change-label)
 
   (def training-panel (JPanel.))
+  (def train-panel-layout (BoxLayout. training-panel BoxLayout/Y_AXIS))
   (doto training-panel
     (.setLayout train-panel-layout)
     (.add scroll))
@@ -93,6 +97,7 @@
 
 
   (def training-button (JButton. "Start Training"))
+  (.setPreferredSize training-button (Dimension. 70 40))
   (def act (proxy [ActionListener] []
              (actionPerformed [event] (start-training (.getText input-label-info) (parse-int (.getSelectedValue input-label)) ))))
 

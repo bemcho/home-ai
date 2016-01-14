@@ -34,7 +34,7 @@
 (def trainning-samples (atom (vector)))
 (def training (atom false))
 (def collect-samples (atom false))
-(def empirical-sample-count 77)
+(def empirical-sample-count 100)
 (def confidence 123.0)
 (def traning-rectangle (atom (Rect. 300 100 250  250)) )
 (def classifiers-path "resources/data/classifiers/")
@@ -94,7 +94,7 @@
     (doall
       (map (fn [rect]
              (let [predictedLabel (.predict @lbph-face-recognizer (Mat. (.clone imageMatGray)  rect  ) )]
-               (Imgproc/putText image (str "Label=" (if (and (>= predictedLabel 0) (<= predictedLabel @label))  predictedLabel predictedLabel) )
+               (Imgproc/putText image (if (and (> predictedLabel 0) (<= predictedLabel @label)) (str "Label=" predictedLabel)  "Unknown")
                (Point. (.x rect) (- (.y rect) 10))
                Highgui/CV_FONT_NORMAL  1 (Scalar. 255 255 51) 2)))
            @all-detections-for-image)

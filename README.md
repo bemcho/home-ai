@@ -63,16 +63,25 @@ Do the same thing with the native lib previously wrapped in a new jar file.
 lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
 
    
-   Change line 17 :jvm-opts ["-Xmx8g" "-Djava.library.path=E:\\ClojureProjects\\home-ai\\native\\windows\\x86_64"] in            project.clj
-   as apropriate.
-
+  
    This quite did not work :
    $ java -jar ai-home-0.1.0-standalone.jar [args]
    
    however:
-   lein run ai-home-0.1.0-standalone.jar it's ok
+   lein run  it's ok only so far Windows dlls are provided this will not work on mac os x so far, unles you build with contrib and new java wrapper for your OS.
+   
+   Under Windows you need camera set as default
+     Install leiningen
+	 find your .lein/profiles.clj file
+	Copy/paste next line: 
+	{:user {:plugins [[lein-localrepo "0.5.2"]]}}
 
-
+	cd  home-ai folder 
+	
+	lein localrepo install opencv-310.jar opencv/opencv 3.1.0
+	lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
+	lein run	
+	
 ## Options
 
 FIXME: listing of options this app accepts.

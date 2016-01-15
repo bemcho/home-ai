@@ -6,8 +6,8 @@
            javax.swing.JPanel
            java.awt.FlowLayout
            org.opencv.videoio.VideoCapture
-           (javax.swing JButton JTextField JLabel JList JScrollPane BoxLayout DefaultListSelectionModel)
-           (java.awt GridLayout Dimension)
+           (javax.swing JButton JTextField JLabel JList JScrollPane BoxLayout DefaultListSelectionModel DefaultListModel SwingConstants JComponent)
+           (java.awt GridLayout Dimension Component)
            (java.awt.event ActionListener)
            (javax.swing.event ListSelectionListener))
 
@@ -36,16 +36,17 @@
   (reset! opencv b))
 
 (defn read-labels-from-mat  [mat]
-  (into-array String (map #(str %1) [1 2 3 4 5 6 7 8 9 10 11 12 13 14]))
+  (map #(str %1) (range 1 100))
   )
 (defn setup-viewer []
   (def window (JFrame. "test"))
   (def view (JPanel.))
   (def view-panel-layout (BoxLayout. view  BoxLayout/Y_AXIS))
     (.setLayout view view-panel-layout)
+    (.setAlignmentX view JComponent/CENTER_ALIGNMENT)
   (doto window
     (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
-    (.setBounds 0 0 1300 950)
+    (.setBounds 0 0 1300 1000)
     )
 
 
@@ -59,19 +60,33 @@
 
 
   (def label-label (JLabel. "Enter label number you want to associate with label info.You can add different labels with same label info."))
-  (def input-label (JList. (read-labels-from-mat (.getLabels @lbph-face-recognizer))))
+  (.setAlignmentX label-label JComponent/CENTER_ALIGNMENT)
+  (def label-list-model (DefaultListModel.))
+  (dorun
+    (map (fn [e]  (.addElement label-list-model e))  (read-labels-from-mat (.getLabels @lbph-face-recognizer))))
+
+  (def input-label (JList. label-list-model ))
+  (.setAlignmentX input-label JComponent/CENTER_ALIGNMENT)
   (.setPreferredSize input-label (Dimension. 10 200))
-  (.setVisibleRowCount input-label 20)
-  (.setSelectionMode input-label DefaultListSelectionModel/SINGLE_SELECTION)
-  (def scroll  (JScrollPane.))
-  (doto scroll
+  (.setVisibleRowCount input-label -1)
+  (.setSelectionMode input-label DefaultListSelectionModel/SINGLE_INTERVAL_SELECTION)
+  (.setLayoutOrientation input-label JList/HORIZONTAL_WRAP)
+  (.setSelectionInterval input-label 0 0)
+
+  (def label-list-scroller  (JScrollPane.))
+  (doto label-list-scroller
     (.setViewportView  input-label)
+    (.setPreferredSize (Dimension. 250 80))
+    (.setAlignmentX JComponent/CENTER_ALIGNMENT)
     )
 
 
   (def label-label-info (JLabel. "Enter String representing your label {first last name etc.}"))
+  (.setAlignmentX label-label-info JComponent/CENTER_ALIGNMENT)
+
   (def input-label-info (JTextField. (.getLabelInfo @lbph-face-recognizer (parse-int (if (.getSelectedValue input-label) (.getSelectedValue input-label) "1")) )))
   (.setPreferredSize input-label-info (Dimension. 70 40))
+  (.setAlignmentX input-label-info JComponent/CENTER_ALIGNMENT)
 
   (def on-change-label (proxy [ListSelectionListener] []
                          (valueChanged [event]
@@ -83,27 +98,25 @@
   (def train-panel-layout (BoxLayout. training-panel BoxLayout/Y_AXIS))
   (doto training-panel
     (.setLayout train-panel-layout)
-    (.add scroll))
-
-  (.setLayout (.getContentPane window) layout)
-  (.add (.getContentPane window) view)
-
-  (.add training-panel label-label-info)
-  (.add training-panel input-label-info)
-
-  (.add training-panel label-label)
-  (.add training-panel input-label)
-
-
+    )
 
   (def training-button (JButton. "Start Training"))
-  (.setPreferredSize training-button (Dimension. 70 40))
+  (.setPreferredSize training-button (Dimension. 800 100))
+  (.setAlignmentX training-button JComponent/CENTER_ALIGNMENT)
   (def act (proxy [ActionListener] []
              (actionPerformed [event] (start-training (.getText input-label-info) (parse-int (.getSelectedValue input-label)) ))))
 
   (.addActionListener training-button act)
   (.add training-panel training-button)
 
+  (.add training-panel label-label-info)
+  (.add training-panel input-label-info)
+
+  (.add training-panel label-label)
+  (.add training-panel label-list-scroller)
+
+  (.setLayout (.getContentPane window) layout)
+  (.add (.getContentPane window) view)
   (.add (.getContentPane window) training-panel)
   (.setVisible window true)
 

@@ -200,12 +200,8 @@ a
   (reset! label label-to-train)
   (reset! label-info label-info-new)
   (reset! traning-rectangle (Rect. 300 100 250  250))
-  (let [detection-rect (first @all-detections-for-image)
-        crop-x (+ (.x detection-rect) (* (.x detection-rect) 0.1))
-        crop-y (+ (.y detection-rect) (* (.y detection-rect) 0.1))
-        crop-width (- (.width detection-rect) (* (.width detection-rect) 0.1))
-        crop-height (- (.height detection-rect) (* (.height detection-rect) 0.1))]
-    (if detection-rect (reset! traning-rectangle (Rect. crop-x crop-y crop-width crop-height )))
+  (let [detection-rect (first @all-detections-for-image)]
+    (if (not (nil? detection-rect)) (reset! traning-rectangle detection-rect))
     )
 
   (reset! training true)

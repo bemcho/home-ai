@@ -14,7 +14,7 @@
                  [clj-sockets "0.1.0"]
                  ]
 
-  :jvm-opts ["-Xmx8g" "-Djava.library.path=E:\\ClojureProjects\\home-ai\\native\\windows\\x86_64"]
+  :jvm-opts ["-Xmx8g" "-Djava.library.path=.\\native\\windows\\x86_64"]
   :injections [ (clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)]
   :native-path "native"
   :main ^:skip-aot home-ai.core

@@ -1,19 +1,18 @@
 (ns home-ai.video
 
   (:import javax.imageio.ImageIO)
-  (:import (java.io FileOutputStream DataOutputStream File))
+  (:import (java.io FileOutputStream File))
   (:import javax.swing.JFrame
            javax.swing.JPanel
-           java.awt.FlowLayout
+           org.opencv.core.Mat
            org.opencv.videoio.VideoCapture
-           (javax.swing JButton JTextField JLabel JList JScrollPane BoxLayout DefaultListSelectionModel DefaultListModel SwingConstants JComponent)
-           (java.awt GridLayout Dimension Component)
+           (javax.swing JButton JTextField JLabel JList JScrollPane BoxLayout DefaultListSelectionModel DefaultListModel JComponent)
+           (java.awt GridLayout Dimension)
            (java.awt.event ActionListener)
            (javax.swing.event ListSelectionListener)
-           (org.opencv.highgui Highgui)
-           (org.opencv.videoio Videoio))
+           (java.awt.image BufferedImage))
 
-  (:require  [home-ai.opencv :refer :all]
+  (:require [home-ai.opencv :refer :all]
             ))
 
 ;This can records raw video to a file called stream.m4v
@@ -37,18 +36,18 @@
 (defn configure-opencv [b]
   (reset! opencv b))
 
-(defn read-labels-from-mat  [mat]
+(defn read-labels-from-mat [mat]
   (map #(str %1) (range 1 100))
   )
 (defn setup-viewer []
   (def window (JFrame. "test"))
   (def view (JPanel.))
-  (def view-panel-layout (BoxLayout. view  BoxLayout/Y_AXIS))
-    (.setLayout view view-panel-layout)
-    (.setAlignmentX view JComponent/CENTER_ALIGNMENT)
+  (def view-panel-layout (BoxLayout. view BoxLayout/Y_AXIS))
+  (.setLayout view view-panel-layout)
+  (.setAlignmentX view JComponent/CENTER_ALIGNMENT)
   (doto window
     (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
-    (.setBounds 0 0 1500 1300)
+    (.setBounds 50 50 1500 1500)
     )
 
 
@@ -65,9 +64,9 @@
   (.setAlignmentX label-label JComponent/CENTER_ALIGNMENT)
   (def label-list-model (DefaultListModel.))
   (dorun
-    (map (fn [e]  (.addElement label-list-model e))  (read-labels-from-mat (.getLabels @lbph-face-recognizer))))
+    (map (fn [e] (.addElement label-list-model e)) (read-labels-from-mat (.getLabels @lbph-face-recognizer))))
 
-  (def input-label (JList. label-list-model ))
+  (def input-label (JList. label-list-model))
   (.setAlignmentX input-label JComponent/CENTER_ALIGNMENT)
   (.setPreferredSize input-label (Dimension. 10 200))
   (.setVisibleRowCount input-label -1)
@@ -75,9 +74,9 @@
   (.setLayoutOrientation input-label JList/HORIZONTAL_WRAP)
   (.setSelectionInterval input-label 0 0)
 
-  (def label-list-scroller  (JScrollPane.))
+  (def label-list-scroller (JScrollPane.))
   (doto label-list-scroller
-    (.setViewportView  input-label)
+    (.setViewportView input-label)
     (.setPreferredSize (Dimension. 250 80))
     (.setAlignmentX JComponent/CENTER_ALIGNMENT)
     )
@@ -86,14 +85,14 @@
   (def label-label-info (JLabel. "Enter String representing your label {first last name etc.}"))
   (.setAlignmentX label-label-info JComponent/CENTER_ALIGNMENT)
 
-  (def input-label-info (JTextField. (.getLabelInfo @lbph-face-recognizer (parse-int (if (.getSelectedValue input-label) (.getSelectedValue input-label) "1")) )))
+  (def input-label-info (JTextField. (.getLabelInfo @lbph-face-recognizer (parse-int (if (.getSelectedValue input-label) (.getSelectedValue input-label) "1")))))
   (.setPreferredSize input-label-info (Dimension. 70 40))
   (.setAlignmentX input-label-info JComponent/CENTER_ALIGNMENT)
 
   (def on-change-label (proxy [ListSelectionListener] []
                          (valueChanged [event]
-                           (.setText input-label-info  (.getLabelInfo @lbph-face-recognizer
-                                                                      (parse-int (if (.getSelectedValue input-label) (.getSelectedValue input-label) "1")) )))))
+                           (.setText input-label-info (.getLabelInfo @lbph-face-recognizer
+                                                                     (parse-int (if (.getSelectedValue input-label) (.getSelectedValue input-label) "1")))))))
   (.addListSelectionListener input-label on-change-label)
 
   (def training-panel (JPanel.))
@@ -108,7 +107,7 @@
   (def act (proxy [ActionListener] []
              (actionPerformed [event]
                (.setEnabled training-button false)
-               (start-training (.getText input-label-info) (parse-int (.getSelectedValue input-label)) ))))
+               (start-training (.getText input-label-info) (parse-int (.getSelectedValue input-label))))))
 
   (.addActionListener training-button act)
   (.add training-panel training-button)
@@ -126,9 +125,9 @@
 
   (def g (.getGraphics view)))
 
-(defn update-image [bi]
+(defn update-image [^BufferedImage bi]
   (do
-                                         (.drawImage g bi 10 10 view)
+    (.drawImage g bi 10 10 view)
     ;(q/image bi 0 0) 
     )
   )
@@ -136,7 +135,7 @@
 (defn save-image [bi]
   (ImageIO/write bi "png" (File. "opencvin.png")))
 
-(defn display-frame [matImg]
+(defn display-frame [^Mat matImg]
   (try
     (update-image
       (process-mat-and-return-image matImg))
@@ -150,9 +149,9 @@
 
     (do
       (.get video 0 0 barray)
-    (.write out  barray))))
+      (.write out barray))))
 
-(defn read-frame [cam out]
+(defn read-frame [^VideoCapture cam out]
   (try
     (do
       (let [frame (capture-from-cam cam)]
@@ -162,14 +161,14 @@
     (catch Exception e (println (str "Problem reading frame - skipping " e)))))
 
 
-(defn stream-video [_ cam out]
+(defn stream-video [_ ^Mat cam out]
   (if @stream (do
-                  (read-frame cam out)
-                  (when (and @collect-samples (>= (.size @trainning-samples ) empirical-sample-count))
-                    (send-off train-agent update-recognizer @trainning-samples))
-                  (send video-agent stream-video cam  (when @save-video
-                                                        out))
-                  )
+                (read-frame cam out)
+                (when (and @collect-samples (>= (.size @trainning-samples) empirical-sample-count))
+                  (send-off train-agent update-recognizer @trainning-samples))
+                (send video-agent stream-video cam (when @save-video
+                                                     out))
+                )
 
               (.release cam))
   )
@@ -187,20 +186,21 @@
     (reset! stream true)
     (Thread/sleep 40)
     ;wait for the first frame
-    (let [cam (VideoCapture. device) ]
-       (do
-         (.set cam Videoio/CV_CAP_PROP_FRAME_WIDTH 1280)
-         (.set cam Videoio/CV_CAP_PROP_FRAME_HEIGHT 720))
+    (let [cam (VideoCapture. device)]
+      (do
+        ;(.set cam Videoio/CV_CAP_PROP_FRAME_WIDTH 1280)
+        ;(.set cam Videoio/CV_CAP_PROP_FRAME_HEIGHT 1080)
+        )
       (send video-agent stream-video cam (when @save-video
-                                                              (FileOutputStream. "vid.h264"))))
-      )
+                                           (FileOutputStream. "vid.h264"))))
     )
+  )
 
-     (defn start-visual-repl
-       [device]
-       (do
-         (init-opencv)
-         (init-video )
-         (start-video device))
-       )
+(defn start-visual-repl
+  [device]
+  (do
+    (init-opencv)
+    (init-video)
+    (start-video device))
+  )
 

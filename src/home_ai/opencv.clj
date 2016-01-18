@@ -15,7 +15,8 @@
     (org.opencv.face Face)
     (org.opencv.core CvType)
     (org.opencv.highgui Highgui)
-    (java.io File))
+    (java.io File)
+    (java.awt.image BufferedImage))
   (:require [clojure.walk :as walk]))
 
 
@@ -73,7 +74,7 @@
   (:mat mat)
   a
   )
-(defn draw-bounding-boxes!
+(defn ^BufferedImage draw-bounding-boxes!
   [^Mat image]
   (let [imageMatGray (Mat.)]
     (Imgproc/cvtColor image imageMatGray Imgproc/COLOR_BGR2GRAY)
@@ -121,7 +122,7 @@
 
 
 
-(defn process-mat-and-return-image [^Mat imageMat]
+(defn ^BufferedImage process-mat-and-return-image [^Mat imageMat]
   (reset! all-detections-for-image [])
   (let [imageMatGray (Mat.)
         agents (vals @classifiers)]
@@ -137,7 +138,7 @@
     )
   (draw-bounding-boxes! imageMat))
 
-(defn capture-from-cam
+(defn ^Mat capture-from-cam
   "Gets frame from cam and returns it as Mat."
   [^VideoCapture cam]
   (let [matImage (Mat.)]

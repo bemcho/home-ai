@@ -1,8 +1,8 @@
 (ns home-ai.core
   (:require
-             [home-ai.video :refer :all]
-             [home-ai.opencv :refer :all]
-            )
+    [home-ai.video :refer :all]
+    [home-ai.opencv :refer :all]
+    )
   (:gen-class))
 
 
@@ -15,6 +15,6 @@
     ; A button with an action listener that will cause the dialog to close
     ; and return :ok to the invoker.
     )
-)
+  )
 
 

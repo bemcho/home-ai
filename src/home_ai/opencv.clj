@@ -1,6 +1,5 @@
 (ns home-ai.opencv
   (:import
-    org.opencv.core.Core
     org.opencv.core.MatOfRect
     org.opencv.core.MatOfByte
     org.opencv.core.Point
@@ -9,22 +8,18 @@
     org.opencv.core.Scalar
     org.opencv.imgcodecs.Imgcodecs
     org.opencv.objdetect.CascadeClassifier
-    org.opencv.objdetect.Objdetect
     org.opencv.videoio.VideoCapture
-    java.awt.image.BufferedImage
-    java.awt.RenderingHints
     javax.imageio.ImageIO
-    java.io.File
     java.io.ByteArrayInputStream
-    org.opencv.core.Size
     (org.opencv.imgproc Imgproc)
     (org.opencv.face Face)
     (org.opencv.core CvType)
-    (org.opencv.highgui Highgui))
-    (:require [clojure.walk :as walk]))
+    (org.opencv.highgui Highgui)
+    (java.io File))
+  (:require [clojure.walk :as walk]))
 
 
-(defn convert-mat-to-buffer-image [mat]
+(defn convert-mat-to-buffer-image [^Mat mat]
   (let [new-mat (MatOfByte.)]
     (Imgcodecs/imencode ".png" mat new-mat)
     (ImageIO/read (ByteArrayInputStream. (.toArray new-mat)))))
@@ -36,7 +31,7 @@
 (def collect-samples (atom false))
 (def empirical-sample-count 50)
 (def confidence 123.0)
-(def traning-rectangle (atom (Rect. 300 100 250  250)) )
+(def traning-rectangle (atom (Rect. 300 100 250 250)))
 (def classifiers-path "resources/data/classifiers/")
 (def recognizers-path "resources/data/facerecognizers/lbphFaceRecognizer.xml")
 (def label (atom 1))
@@ -47,74 +42,76 @@
 (declare classifiers)
 
 
-(defn create-classifier-agent [classifier]
+(defn create-classifier-agent [^CascadeClassifier classifier]
   (agent {:detections (MatOfRect.)
           :classifier classifier}))
 
-(defn load-classifier [file-path]
+(defn load-classifier [^String file-path]
   (walk/keywordize-keys (assoc {} (last (clojure.string/split file-path #"/")) (create-classifier-agent (CascadeClassifier.
                                                                                                           file-path)))))
 
-(defn load-image [filename]
+(defn load-image [^String filename]
   (Imgcodecs/imread filename))
 
-(defn detect-faces! [classifier image]
+(defn detect-faces! [^CascadeClassifier classifier ^Mat image]
   (.detectMultiScale classifier
                      image
                      @face-detections))
 
-(defn detect-faces-agent! [a image]
+(defn detect-faces-agent! [a ^Mat image]
   (.detectMultiScale (:classifier a)
                      image
                      (:detections a)
                      )
   ;(reset! all-detections-for-image (concat @all-detections-for-image (.toArray @detections)))
   a
-    )
+  )
 (defn recognize
   "docstring"
-  [a mat]
+  [a ^Mat mat]
   (:label (.predict @lbph-face-recognizer mat))
   (:mat mat)
   a
   )
 (defn draw-bounding-boxes!
-  [image]
+  [^Mat image]
   (let [imageMatGray (Mat.)]
     (Imgproc/cvtColor image imageMatGray Imgproc/COLOR_BGR2GRAY)
     (Imgproc/equalizeHist imageMatGray imageMatGray)
     (doall
-      (map (fn [rect]
+      (map (fn [^Rect rect]
              (Imgproc/rectangle image
                                 (Point. (.x rect) (.y rect))
                                 (Point. (+ (.x rect) (.width rect))
                                         (+ (.y rect) (.height rect)))
                                 (Scalar. 0 255 0) 2))
-           (concat @all-detections-for-image (when @training (vector  @traning-rectangle)))))
+           (concat @all-detections-for-image (when @collect-samples (vector @traning-rectangle)))))
 
     (doall
-      (map (fn [rect]
-             (let [detectedImageGray (Mat. imageMatGray rect)
+      (map (fn [^Rect rect]
+             (let [detectedImageGray (.submat imageMatGray rect)
                    predictedLabel (.predict @lbph-face-recognizer detectedImageGray)
                    labelInfo (.getLabelInfo @lbph-face-recognizer predictedLabel)
                    ]
-               (Imgproc/putText image (if (> predictedLabel 0) (str labelInfo "L:" predictedLabel )  "Unknown")
-               (Point. (.x rect) (- (.y rect) 10))
-               Highgui/CV_FONT_NORMAL  1 (Scalar. 255 255 51) 2)))
+               (Imgproc/putText image (if (> predictedLabel 0) (str labelInfo "L:" predictedLabel) "Unknown")
+                                (Point. (.x rect) (- (.y rect) 10))
+                                Highgui/CV_FONT_NORMAL 1 (Scalar. 255 255 51) 2)))
            @all-detections-for-image)
-               )
-             )
+      )
+    )
+  (when @training
+    (Imgproc/putText image (str "Training for L=" @label) (Point. (.x @traning-rectangle) (- (.y @traning-rectangle) 40)) Highgui/CV_FONT_NORMAL 1 (Scalar. 0 0 204) 1))
 
-      (when @collect-samples
-        (Imgproc/putText image (str "Train for Label=" @label)  (Point. (.x @traning-rectangle) (- (.y @traning-rectangle) 10) )  Highgui/CV_FONT_NORMAL  1 (Scalar. 0 0 204) 2))
-      ;(Imgcodecs/imwrite "faceDetections.png" image)
-      (convert-mat-to-buffer-image image))
+  (when @collect-samples
+    (Imgproc/putText image (str "Gather Samples for L=" @label) (Point. (.x @traning-rectangle) (- (.y @traning-rectangle) 10)) Highgui/CV_FONT_NORMAL 1 (Scalar. 0 0 204) 1))
+  ;(Imgcodecs/imwrite "faceDetections.png" image)
+  (convert-mat-to-buffer-image image))
 
 
 
 (defn load-classifiers
-  [dir-name]
-  (loop [file-paths (filter #(.endsWith (.getName %) ".xml") (.listFiles (java.io.File. dir-name)) )
+  [^String dir-name]
+  (loop [file-paths (filter #(.endsWith (.getName %) ".xml") (.listFiles (java.io.File. dir-name)))
          result {}]
     (if-not (first file-paths)
       result
@@ -124,7 +121,7 @@
 
 
 
-(defn process-mat-and-return-image [imageMat]
+(defn process-mat-and-return-image [^Mat imageMat]
   (reset! all-detections-for-image [])
   (let [imageMatGray (Mat.)
         agents (vals @classifiers)]
@@ -132,21 +129,21 @@
     (Imgproc/equalizeHist imageMatGray imageMatGray)
     (dorun
       (if @collect-samples
-        (reset! trainning-samples (concat @trainning-samples (vector (.clone (Mat. imageMatGray @traning-rectangle)))))
+        (reset! trainning-samples (concat @trainning-samples (vector (.clone (.submat imageMatGray @traning-rectangle)))))
         (doseq [agent agents]
-          (send agent detect-faces-agent! imageMatGray )
-          (doall (map #(reset! all-detections-for-image (concat @all-detections-for-image (.toArray (:detections (deref %)))  ))   agents))))
+          (send agent detect-faces-agent! imageMatGray)
+          (doall (map #(reset! all-detections-for-image (concat @all-detections-for-image (.toArray (:detections (deref %))))) agents))))
       )
-        )
-    (draw-bounding-boxes! imageMat))
+    )
+  (draw-bounding-boxes! imageMat))
 
-  (defn capture-from-cam
-    "Gets frame from cam and returns it as Mat."
-    [cam]
-    (let [matImage (Mat.)]
-      (when (.isOpened cam)
-        (do
-          (.read cam matImage))) matImage))
+(defn capture-from-cam
+  "Gets frame from cam and returns it as Mat."
+  [^VideoCapture cam]
+  (let [matImage (Mat.)]
+    (when (.isOpened cam)
+      (do
+        (.read cam matImage))) matImage))
 
 (defn capture-from-device [n]
   (capture-from-cam (VideoCapture. n)))
@@ -177,10 +174,10 @@
     (let [samples-count (.size @trainning-samples)
           mat (ref (Mat/zeros 1 samples-count CvType/CV_32SC1))]
 
-      (.setTo (.row @mat 0)  (Scalar. @label 0 0))
+      (.setTo (.row @mat 0) (Scalar. @label 0 0))
       (.update @lbph-face-recognizer samples @mat)
       (.setLabelInfo @lbph-face-recognizer @label @label-info)
-      (send-off   save-model-agent (fn [a rec path] (do (reset! training true) (.save rec path) (reset! training false)) a) @lbph-face-recognizer recognizers-path )
+      (send-off save-model-agent (fn [a rec path] (do (reset! training true) (.save rec path) (reset! training false)) a) @lbph-face-recognizer recognizers-path)
       (reset! trainning-samples [])
       )
     )
@@ -193,13 +190,13 @@
     (toggle-collect-samples)
     (update-lbph-recognizer matSamples)
     (toggle-training))
-a
+  a
   )
 
 (defn start-training [label-info-new label-to-train]
   (reset! label label-to-train)
   (reset! label-info label-info-new)
-  (reset! traning-rectangle (Rect. 300 100 250  250))
+  (reset! traning-rectangle (Rect. 300 100 250 250))
   (let [detection-rect (first @all-detections-for-image)]
     (if (not (nil? detection-rect)) (reset! traning-rectangle detection-rect))
     )
@@ -208,5 +205,5 @@ a
   (reset! collect-samples true)
   )
 
-(defn parse-int [s]
+(defn parse-int [^String s]
   (Integer/parseInt (re-find #"\A-?\d+" s)))

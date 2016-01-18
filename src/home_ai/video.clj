@@ -9,7 +9,9 @@
            (javax.swing JButton JTextField JLabel JList JScrollPane BoxLayout DefaultListSelectionModel DefaultListModel SwingConstants JComponent)
            (java.awt GridLayout Dimension Component)
            (java.awt.event ActionListener)
-           (javax.swing.event ListSelectionListener))
+           (javax.swing.event ListSelectionListener)
+           (org.opencv.highgui Highgui)
+           (org.opencv.videoio Videoio))
 
   (:require  [home-ai.opencv :refer :all]
             ))
@@ -46,7 +48,7 @@
     (.setAlignmentX view JComponent/CENTER_ALIGNMENT)
   (doto window
     (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
-    (.setBounds 0 0 1300 1000)
+    (.setBounds 0 0 1500 1300)
     )
 
 
@@ -185,14 +187,20 @@
     (reset! stream true)
     (Thread/sleep 40)
     ;wait for the first frame
-    (send video-agent stream-video (VideoCapture. device) (when @save-video
-                                            (FileOutputStream. "vid.h264")))))
+    (let [cam (VideoCapture. device) ]
+       (do
+         (.set cam Videoio/CV_CAP_PROP_FRAME_WIDTH 1280)
+         (.set cam Videoio/CV_CAP_PROP_FRAME_HEIGHT 720))
+      (send video-agent stream-video cam (when @save-video
+                                                              (FileOutputStream. "vid.h264"))))
+      )
+    )
 
      (defn start-visual-repl
-       []
+       [device]
        (do
          (init-opencv)
          (init-video )
-         (start-video 0))
+         (start-video device))
        )
 

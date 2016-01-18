@@ -4,7 +4,7 @@
 /native
 pom.xml
 pom.xml.asc
-/resources/data/facerecognizers
+/resources/data/facerecognizers/*
 *.class
 /.lein-*
 /.nrepl-port

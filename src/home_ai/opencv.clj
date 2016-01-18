@@ -105,7 +105,7 @@
                )
              )
 
-      (when @training
+      (when @collect-samples
         (Imgproc/putText image (str "Train for Label=" @label)  (Point. (.x @traning-rectangle) (- (.y @traning-rectangle) 10) )  Highgui/CV_FONT_NORMAL  1 (Scalar. 0 0 204) 2))
       ;(Imgcodecs/imwrite "faceDetections.png" image)
       (convert-mat-to-buffer-image image))
@@ -131,7 +131,7 @@
     (Imgproc/cvtColor imageMat imageMatGray Imgproc/COLOR_BGR2GRAY)
     (Imgproc/equalizeHist imageMatGray imageMatGray)
     (dorun
-      (if @training
+      (if @collect-samples
         (reset! trainning-samples (concat @trainning-samples (vector (.clone (Mat. imageMatGray @traning-rectangle)))))
         (doseq [agent agents]
           (send agent detect-faces-agent! imageMatGray )
@@ -180,7 +180,7 @@
       (.setTo (.row @mat 0)  (Scalar. @label 0 0))
       (.update @lbph-face-recognizer samples @mat)
       (.setLabelInfo @lbph-face-recognizer @label @label-info)
-      (send-off   save-model-agent (fn [a rec path] (.save rec path) a) @lbph-face-recognizer recognizers-path )
+      (send-off   save-model-agent (fn [a rec path] (do (reset! training true) (.save rec path) (reset! training false)) a) @lbph-face-recognizer recognizers-path )
       (reset! trainning-samples [])
       )
     )
@@ -191,8 +191,8 @@
   [a matSamples]
   (do
     (toggle-collect-samples)
-    (toggle-training))
     (update-lbph-recognizer matSamples)
+    (toggle-training))
 a
   )
 

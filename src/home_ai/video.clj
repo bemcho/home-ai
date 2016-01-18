@@ -104,7 +104,9 @@
   (.setPreferredSize training-button (Dimension. 800 100))
   (.setAlignmentX training-button JComponent/CENTER_ALIGNMENT)
   (def act (proxy [ActionListener] []
-             (actionPerformed [event] (start-training (.getText input-label-info) (parse-int (.getSelectedValue input-label)) ))))
+             (actionPerformed [event]
+               (.setEnabled training-button false)
+               (start-training (.getText input-label-info) (parse-int (.getSelectedValue input-label)) ))))
 
   (.addActionListener training-button act)
   (.add training-panel training-button)
@@ -136,6 +138,9 @@
   (try
     (update-image
       (process-mat-and-return-image matImg))
+    (when (and (not @training) (not (.isEnabled training-button)))
+      (.setEnabled training-button true)
+      )
     (catch Exception e (println (str "Error displaying frame - skipping " e)))))
 
 (defn write-payload [video out]

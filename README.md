@@ -4,10 +4,10 @@ Inspired by https://github.com/gigasquid/clj-drone (opencv and video)
 
 ## Installation
 
-Download from http://example.com/FIXME.
+Download from https://github.com/bemcho/home-ai.
 
 ## Usage
-   install opencv
+   install opencv (If you are on Windows x64 skip this just add existing jars to the local repo {see: Locally install the jars})
 
     sudo port install opencv +java -no_static +cuda +ffmpeg +tbb
 
@@ -70,11 +70,14 @@ lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
    however:
    lein run  it's ok only so far Windows dlls are provided this will not work on mac os x so far, unles you build with contrib and new java wrapper for your OS.
    
+  
    Under Windows you need camera set as default
+   
      Install leiningen
-	 find your .lein/profiles.clj file
-	Copy/paste next line: 
-	{:user {:plugins [[lein-localrepo "0.5.2"]]}}
+	 Find your .lein/profiles.clj file
+    	Copy/paste next line: 
+	        {:user {:plugins [[lein-localrepo "0.5.2"]]}}
+	        
 
 	cd  home-ai folder 
 	

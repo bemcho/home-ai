@@ -138,7 +138,6 @@
 (defn update-image [^BufferedImage bi]
   (do
     (.drawImage g bi 10 10 view)
-    ;(q/image bi 0 0) 
     )
   )
 

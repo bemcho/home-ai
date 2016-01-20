@@ -6,6 +6,7 @@
            javax.swing.JPanel
            org.opencv.core.Mat
            org.opencv.videoio.VideoCapture
+           org.opencv.videoio.Videoio
            (javax.swing JButton JTextField JLabel JList JScrollPane BoxLayout DefaultListSelectionModel DefaultListModel JComponent)
            (java.awt GridLayout Dimension)
            (java.awt.event ActionListener)
@@ -23,7 +24,8 @@
 
 ;;;;;
 
-(def window (JFrame. "test"))
+(def window-training (JFrame. "test"))
+(def window-view (JFrame. "test"))
 (def view (JPanel.))
 (def stream (atom true))
 (def video-agent (agent {}))
@@ -40,16 +42,22 @@
   (map #(str %1) (range 1 100))
   )
 (defn setup-viewer []
-  (def window (JFrame. "test"))
+  (def window-training (JFrame. "test"))
   (def view (JPanel.))
+  (.setPreferredSize view (Dimension. 1000 1000))
   (def view-panel-layout (BoxLayout. view BoxLayout/Y_AXIS))
   (.setLayout view view-panel-layout)
   (.setAlignmentX view JComponent/CENTER_ALIGNMENT)
-  (doto window
+  (doto window-view
     (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
-    (.setBounds 50 50 1500 1500)
+    (.setBounds 0 0 700 700)
     )
 
+  (doto window-training
+    (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
+    (.setBounds 700 0 500 500)
+    )
+  window-view
 
   (import 'java.awt.event.ActionListener)
 
@@ -118,10 +126,12 @@
   (.add training-panel label-label)
   (.add training-panel label-list-scroller)
 
-  (.setLayout (.getContentPane window) layout)
-  (.add (.getContentPane window) view)
-  (.add (.getContentPane window) training-panel)
-  (.setVisible window true)
+  (.setLayout (.getContentPane window-training) layout)
+  (.add (.getContentPane window-view) view)
+  (.add (.getContentPane window-training) training-panel)
+  (.setVisible window-view true)
+  (.setVisible window-training true)
+  (.pack window-training)
 
   (def g (.getGraphics view)))
 
@@ -186,10 +196,17 @@
     (reset! stream true)
     (Thread/sleep 40)
     ;wait for the first frame
-    (let [cam (VideoCapture. device)]
-      (do
-        ;(.set cam Videoio/CV_CAP_PROP_FRAME_WIDTH 1280)
-        ;(.set cam Videoio/CV_CAP_PROP_FRAME_HEIGHT 1080)
+    (let [cam (if (number? device)
+                (do (VideoCapture.    device                      ;(+ device Videoio/CAP_FFMPEG Videoio/CAP_PROP_CONVERT_RGB)
+                      ))
+                ;else
+                (do (VideoCapture. device                   ;(+ Videoio/CAP_FFMPEG Videoio/CAP_PROP_CONVERT_RGB)
+                                   )))
+          ]
+      (doto cam
+        (.set Videoio/CAP_PROP_FRAME_COUNT 30)
+        ;(.set Videoio/CV_CAP_PROP_FRAME_WIDTH 1280)
+        ;(.set Videoio/CV_CAP_PROP_FRAME_HEIGHT 720)
         )
       (send video-agent stream-video cam (when @save-video
                                            (FileOutputStream. "vid.h264"))))

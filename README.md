@@ -83,7 +83,7 @@ lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
 	
 	lein localrepo install opencv-310.jar opencv/opencv 3.1.0
 	lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
-	lein run	
+	lein -o run	
 	
 ## Options
 

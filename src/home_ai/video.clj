@@ -50,7 +50,7 @@
   (.setAlignmentX view JComponent/CENTER_ALIGNMENT)
   (doto window-view
     (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
-    (.setBounds 0 0 700 700)
+    (.setBounds 0 0 1300 800)
     )
 
   (doto window-training
@@ -205,8 +205,8 @@
           ]
       (doto cam
         (.set Videoio/CAP_PROP_FRAME_COUNT 30)
-        ;(.set Videoio/CV_CAP_PROP_FRAME_WIDTH 1280)
-        ;(.set Videoio/CV_CAP_PROP_FRAME_HEIGHT 720)
+        (.set Videoio/CV_CAP_PROP_FRAME_WIDTH 1280)
+        (.set Videoio/CV_CAP_PROP_FRAME_HEIGHT 720)
         )
       (send video-agent stream-video cam (when @save-video
                                            (FileOutputStream. "vid.h264"))))

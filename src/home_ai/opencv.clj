@@ -30,7 +30,7 @@
 (def trainning-samples (atom (vector)))
 (def training (atom false))
 (def collect-samples (atom false))
-(def empirical-sample-count 50)
+(def empirical-sample-count 15)
 (def confidence 123.0)
 (def traning-rectangle (atom (Rect. 300 100 250 250)))
 (def classifiers-path "resources/data/classifiers/")

@@ -1,6 +1,7 @@
 # home-ai
 
 Inspired by https://github.com/gigasquid/clj-drone (opencv and video)
+Training created during Hackathon 3 2016 in Intershop Sofia see: http://www.intershop.com/
 
 ## Installation
 

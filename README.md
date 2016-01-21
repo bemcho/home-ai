@@ -93,7 +93,7 @@ native libs are not found when java -jar "generated uberjar-standalone.jar"
 
 ## Examples
 
-...
+![alt tag](https://github.com/bemcho/home-ai/blob/master/training-detect.png)
 
 ### Bugs
 

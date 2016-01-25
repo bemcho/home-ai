@@ -44,18 +44,18 @@
 (defn setup-viewer []
   (def window-training (JFrame. "test"))
   (def view (JPanel.))
-  (.setPreferredSize view (Dimension. 1000 1000))
+  (.setPreferredSize view (Dimension. 1920 1080))
   (def view-panel-layout (BoxLayout. view BoxLayout/Y_AXIS))
   (.setLayout view view-panel-layout)
   (.setAlignmentX view JComponent/CENTER_ALIGNMENT)
   (doto window-view
     (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
-    (.setBounds 0 0 1300 800)
+    (.setBounds 0 0 2000 1300)
     )
 
   (doto window-training
     (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
-    (.setBounds 700 0 500 500)
+    (.setBounds 1400 500 150 100)
     )
   window-view
 
@@ -76,7 +76,7 @@
 
   (def input-label (JList. label-list-model))
   (.setAlignmentX input-label JComponent/CENTER_ALIGNMENT)
-  (.setPreferredSize input-label (Dimension. 10 200))
+  (.setPreferredSize input-label (Dimension. 10 30))
   (.setVisibleRowCount input-label -1)
   (.setSelectionMode input-label DefaultListSelectionModel/SINGLE_INTERVAL_SELECTION)
   (.setLayoutOrientation input-label JList/HORIZONTAL_WRAP)
@@ -85,7 +85,7 @@
   (def label-list-scroller (JScrollPane.))
   (doto label-list-scroller
     (.setViewportView input-label)
-    (.setPreferredSize (Dimension. 250 80))
+    (.setPreferredSize (Dimension. 50 80))
     (.setAlignmentX JComponent/CENTER_ALIGNMENT)
     )
 
@@ -110,7 +110,7 @@
     )
 
   (def training-button (JButton. "Start Training"))
-  (.setPreferredSize training-button (Dimension. 800 100))
+  (.setPreferredSize training-button (Dimension. 100 30))
   (.setAlignmentX training-button JComponent/CENTER_ALIGNMENT)
   (def act (proxy [ActionListener] []
              (actionPerformed [event]
@@ -203,9 +203,9 @@
                                    )))
           ]
       (doto cam
-        (.set Videoio/CAP_PROP_FRAME_COUNT 30)
-        (.set Videoio/CV_CAP_PROP_FRAME_WIDTH 1280)
-        (.set Videoio/CV_CAP_PROP_FRAME_HEIGHT 720)
+        ;(.set Videoio/CAP_PROP_FRAME_COUNT 30)
+        (.set Videoio/CV_CAP_PROP_FRAME_WIDTH 1920)
+        (.set Videoio/CV_CAP_PROP_FRAME_HEIGHT 1080)
         )
       (send video-agent stream-video cam (when @save-video
                                            (FileOutputStream. "vid.h264"))))

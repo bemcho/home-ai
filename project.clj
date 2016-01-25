@@ -11,6 +11,7 @@
                  [ clj-logging-config "1.9.10"]
                  [opencv/opencv-native "3.1.0"]
                  [clj-sockets "0.1.0"]
+                 [lwjgl/lwjgl "2.9.3"]
                  ]
 
   :jvm-opts ["-Xmx8g" "-Djava.library.path=./native"]

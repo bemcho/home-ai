@@ -2,6 +2,8 @@
 
 Inspired by https://github.com/gigasquid/clj-drone (opencv and video)
 
+Training created during Hackathon 3 2016 in Intershop Sofia see: http://www.intershop.com/
+
 ## Installation
 
 Download from https://github.com/bemcho/home-ai.
@@ -93,7 +95,7 @@ native libs are not found when java -jar "generated uberjar-standalone.jar"
 
 ## Examples
 
-...
+![alt tag](https://github.com/bemcho/home-ai/blob/master/training-detect.png)
 
 ### Bugs
 

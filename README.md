@@ -85,6 +85,7 @@ lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
 	
 	lein localrepo install opencv-310.jar opencv/opencv 3.1.0
 	lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
+	lein localrepo install lwjgl-2.9.3.jar lwjgl/lwjgl 2.9.3
 	lein -o run	
 	
 ## Options

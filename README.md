@@ -45,8 +45,8 @@ Download from https://github.com/bemcho/home-ai.
 
     Next you need to package the native lib in a jar file by using the jar command to create a new jar file from a directory.
     For your convenience naative libs for mac and windows are provided under native folder
-    
-    jar -cMf opencv-native-310.jar native
+    jar -xfv opencv-310.jar //now you have org folder jar is extracted
+    jar -cMf opencv-native-310.jar org native //this way we pack opencv-310.jar opencv-native jar
 
 
 
@@ -56,11 +56,7 @@ We are now ready to add the two jars as artifacts to the local maven repository 
 Find your .lein folder nad add profiles.clj file
 Copy/paste this line {:user {:plugins [[lein-localrepo "0.5.2"]]}}
 
-lein localrepo install opencv-310.jar opencv/opencv 3.1.0
-
-Here the localrepo install task creates the 3.1.0. release of the opencv/opencv maven artifact from the opencv-310.jar lib and then installs it into the local maven repository. The opencv/opencv artifact will then be available to any maven compliant project (Leiningen is internally based on maven).
-
-Do the same thing with the native lib previously wrapped in a new jar file.
+Here the localrepo install task creates the 3.1.0. release of the opencv/opencv-native maven artifact from the opencv-native-310.jar lib and then installs it into the local maven repository. The opencv/opencv-native artifact will then be available to any maven compliant project (Leiningen is internally based on maven).
 
 lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
 
@@ -73,7 +69,8 @@ lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
    lein run  it's ok only so far Windows dlls are provided this will not work on mac os x so far, unles you build with contrib and new java wrapper for your OS.
    
   
-   Under Windows you need camera set as default
+  You need camera set as default other wise see core.clj (start-visual-repl 0) and try with different numbers.
+
    
      Install leiningen
 	 Find your .lein/profiles.clj file
@@ -83,7 +80,6 @@ lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
 
 	cd  home-ai folder 
 	
-	lein localrepo install opencv-310.jar opencv/opencv 3.1.0
 	lein localrepo install opencv-native-310.jar opencv/opencv-native 3.1.0
 	lein localrepo install lwjgl-2.9.3.jar lwjgl/lwjgl 2.9.3
 	lein -o run	
@@ -99,7 +95,7 @@ native libs are not found when java -jar "generated uberjar-standalone.jar"
 ![alt tag](https://github.com/bemcho/home-ai/blob/master/training-detect.png)
 
 ### Bugs
-
+get-labels-from-mat is hard coded always returns (range 1 100)
 ...
 
 ### Any Other Sections

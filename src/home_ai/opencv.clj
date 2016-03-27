@@ -16,7 +16,8 @@
     (org.opencv.core CvType)
     (org.opencv.highgui Highgui)
     (java.io File)
-    (java.awt.image BufferedImage))
+    (java.awt.image BufferedImage)
+    (java.nio ByteBuffer ByteOrder))
   (:require [clojure.walk :as walk]))
 
 
@@ -25,12 +26,19 @@
     (Imgcodecs/imencode ".png" mat new-mat)
     (ImageIO/read (ByteArrayInputStream. (.toArray new-mat)))))
 
+(defn create-byte-buffer [buffered-image]
+  (let [bytes (-> buffered-image (.getRaster) (.getDataBuffer) (.getData))
+        byte-buffer (ByteBuffer/allocateDirect (alength bytes))]
+    (.order byte-buffer (ByteOrder/nativeOrder))
+    (.put byte-buffer bytes 0 (alength bytes))
+    (.flip byte-buffer)))
+
 (def all-detections-for-image (atom []))
 (def face-detections (atom []))
 (def trainning-samples (atom (vector)))
 (def training (atom false))
 (def collect-samples (atom false))
-(def empirical-sample-count 15)
+(def empirical-sample-count 42)
 (def confidence 123.0)
 (def traning-rectangle (atom (Rect. 300 100 250 250)))
 (def classifiers-path "resources/data/classifiers/")

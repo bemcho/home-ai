@@ -9,6 +9,10 @@ Training created during Hackathon 3 2016 in Intershop Sofia see: http://www.inte
 Download from https://github.com/bemcho/home-ai.
 
 ## Usage
+   if you want to build opencv from source in order to get java wrapper and libs generated you need
+    - python2.7+
+    - ant
+
    install opencv (If you are on Windows x64 skip this just add existing jars to the local repo {see: Locally install the jars})
 
     sudo port install opencv +java -no_static +cuda +ffmpeg +tbb
@@ -44,7 +48,7 @@ Download from https://github.com/bemcho/home-ai.
     Package the native lib as a jar
 
     Next you need to package the native lib in a jar file by using the jar command to create a new jar file from a directory.
-    For your convenience naative libs for mac and windows are provided under native folder
+    For your convenience native libs for mac and windows are provided under native folder
     jar -xfv opencv-310.jar //now you have org folder jar is extracted
     jar -cMf opencv-native-310.jar org native //this way we pack opencv-310.jar opencv-native jar
 
@@ -54,7 +58,7 @@ Locally install the jars¶
 
 We are now ready to add the two jars as artifacts to the local maven repository with the help of the lein-localrepo plugin.
 Find your .lein folder nad add profiles.clj file
-Copy/paste this line {:user {:plugins [[lein-localrepo "0.5.2"]]}}
+Copy/paste this line {:user {:plugins [[lein-localrepo "0.5.4"]]}}
 
 Here the localrepo install task creates the 3.1.0. release of the opencv/opencv-native maven artifact from the opencv-native-310.jar lib and then installs it into the local maven repository. The opencv/opencv-native artifact will then be available to any maven compliant project (Leiningen is internally based on maven).
 

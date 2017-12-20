@@ -12,7 +12,7 @@
     javax.imageio.ImageIO
     java.io.ByteArrayInputStream
     (org.opencv.imgproc Imgproc)
-    (org.opencv.face Face)
+    (org.opencv.face Face FaceRecognizer LBPHFaceRecognizer)
     (org.opencv.core CvType)
     (org.opencv.highgui Highgui)
     (java.io File)
@@ -78,7 +78,7 @@
 (defn recognize
   "docstring"
   [a ^Mat mat]
-  (:label (.predict @lbph-face-recognizer mat))
+  (:label (.predict_label @lbph-face-recognizer mat))
   (:mat mat)
   a
   )
@@ -99,7 +99,7 @@
     (doall
       (map (fn [^Rect rect]
              (let [detectedImageGray (.submat imageMatGray rect)
-                   predictedLabel (.predict @lbph-face-recognizer detectedImageGray)
+                   predictedLabel (.predict_label @lbph-face-recognizer detectedImageGray)
                    labelInfo (.getLabelInfo @lbph-face-recognizer predictedLabel)
                    ]
                (Imgproc/putText image (if (> predictedLabel 0) (str labelInfo "L:" predictedLabel) "Unknown")
@@ -168,9 +168,9 @@
 
 (defn init-opencv []
   (def classifiers (atom (load-classifiers classifiers-path)))
-  (def lbph-face-recognizer (atom (Face/createLBPHFaceRecognizer 1 8 8 8 confidence)))
+  (def lbph-face-recognizer (atom (LBPHFaceRecognizer/create 1 8 8 8 confidence)))
   (if (.exists (File. recognizers-path))
-    (dosync (.load @lbph-face-recognizer recognizers-path))
+    (dosync (.read @lbph-face-recognizer recognizers-path))
 
     (.save @lbph-face-recognizer recognizers-path)
     )
